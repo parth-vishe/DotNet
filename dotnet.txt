@@ -1,0 +1,640 @@
+BLL-->Manager.cs
+namespace BLL;
+using DAL;
+
+public class Manager
+{
+    public bool validateBL(string email, string password)
+    {
+        return DbManager.validateDL(email, password);
+    }
+
+    public bool RegisterBL(string name, string email, string password, int mobile)
+    {
+        return DbManager.RegisterBL(name, email, password, mobile);
+    }
+}
+------------------------------------------------------------------------
+BLL--> ProductMGR.cs
+namespace BLL;
+using DAL;
+using BOL;
+
+public class ProductMGRBLL
+{
+    public List<Product> GetAllProducts()
+    {
+        return ProductMGRDAL.GetAllProducts();
+    }
+
+    public Product GetProduct(int id)
+    {
+        return ProductMGRDAL.GetProduct(id);
+    }
+
+    public bool insert(int id, string name, string category, double unit, string exp)
+    {
+        return ProductMGRDAL.insert(id, name, category, unit, exp);
+    }
+
+    public void Update(int id, string name, string category, double unit, string exp)
+    {
+        ProductMGRDAL.Update(id, name, category, unit, exp);
+    }
+
+    public void Delete(int id)
+    {
+        ProductMGRDAL.Delete(id);
+    }
+}
+------------------------------------------------------------------------
+BOL --> Product.cs
+namespace BOL;
+
+public class Product
+{
+    public int Id { get; set; }
+    public string? Name { get; set; }
+    public string? Category { get; set; }
+    public double UnitPrice { get; set; }
+    public string ExpDate { get; set; }
+
+    public Product(int id, string name, string category, double unitprice, string expdate)
+    {
+        this.Id = id;
+        this.Name = name;
+        this.Category = category;
+        this.UnitPrice = unitprice;
+        this.ExpDate = expdate;
+    }
+    public Product(){
+        
+    }
+}
+----------------------------------------------------------------------
+BOL --> User.cs
+namespace BOL;
+
+public class User
+{
+    public int Id { get; set; }
+    public string Name { get; set; }
+    public string Email { get; set; }
+    public string Password { get; set; }
+    public int Mobile { get; set; }
+
+    public User(int id, string name, string email, string password, int mobile)
+    {
+        this.Id = id;
+        this.Name = name;
+        this.Email = email;
+        this.Password = password;
+        this.Mobile = mobile;
+    }
+    public User(){
+        
+    }
+}
+-------------------------------------------------------------------------
+DAL --> DbManager.cs
+namespace DAL;
+using BOL;
+using MySql.Data.MySqlClient;
+
+public class DbManager
+{
+    static string connectPath =
+        @"server=localhost;port=3306;user=root;password=root123;database=DairyExpress;";
+
+    //get all user from db
+    public static List<User> GetAlluser()
+    {
+        List<User> users = new List<User>();
+        MySqlConnection con = new MySqlConnection();
+        con.ConnectionString = connectPath;
+        try
+        {
+            con.Open();
+            string querry = "select* from user";
+            MySqlCommand cmd = new MySqlCommand(querry, con);
+            MySqlDataReader reader = cmd.ExecuteReader();
+            while (reader.Read())
+            {
+                int id = int.Parse(reader["id"].ToString());
+                string name = reader["Name"].ToString();
+                string email = reader["Email"].ToString();
+                string password = reader["Password"].ToString();
+                int mobile = int.Parse(reader["Mobile"].ToString());
+                User u = new User(id, name, email, password, mobile);
+                users.Add(u);
+            }
+        }
+        catch (Exception e)
+        {
+            Console.WriteLine(e.Message);
+        }
+        finally
+        {
+            con.Close();
+        }
+        return users;
+    }
+
+    public static bool validateDL(string email, string password)
+    {
+        List<User> users = GetAlluser();
+        foreach (User user in users)
+        {
+            if (user.Email.Equals(email) && user.Password.Equals(password))
+                return true;
+        }
+        return false;
+    }
+
+    public static bool RegisterBL(string name, string email, string password, int mobile)
+    {
+        MySqlConnection con = new MySqlConnection();
+        con.ConnectionString = connectPath;
+        bool status = false;
+        try
+        {
+            con.Open();
+            string querry =
+                "insert into user(name,email,password,mobile) values(' "
+                + name
+                + "','"
+                + email
+                + "','"
+                + password
+                + "','"
+                + mobile
+                + "')";
+            MySqlCommand cmd = new MySqlCommand(querry, con);
+            cmd.ExecuteNonQuery();
+            status = true;
+        }
+        catch (Exception e)
+        {
+            Console.WriteLine(e.Message);
+        }
+        finally
+        {
+            con.Close();
+        }
+        return status;
+    }
+}
+--------------------------------------------------------------------------------------------
+DAL-->ProductMGR.cs
+namespace DAL;
+using BOL;
+using System.Collections.Generic;
+using MySql.Data.MySqlClient;
+
+public class ProductMGRDAL
+{
+    static string conpath =
+        @"server=localhost;port=3306;user=root;password=root123;database=dairyexpress;";
+
+    public static List<Product> GetAllProducts()
+    {
+        List<Product> list = new List<Product>();
+        //connection to db
+        MySqlConnection con = new MySqlConnection();
+        con.ConnectionString = conpath;
+        //fire query
+        try
+        {
+            con.Open();
+            string query = "select* from products";
+            MySqlCommand cmd = new MySqlCommand(query, con);
+            MySqlDataReader reader = cmd.ExecuteReader();
+            while (reader.Read())
+            {
+                int id = int.Parse(reader["Id"].ToString());
+                string? name = reader["title"].ToString();
+                string? category = reader["Category"].ToString();
+                double unitPrice = double.Parse(reader["UnitPrice"].ToString());
+                string? expDate = reader["expDate"].ToString();
+                Product p = new Product(id, name, category, unitPrice, expDate);
+                list.Add(p);
+            }
+        }
+        catch (Exception e)
+        {
+            Console.WriteLine(e.Message);
+        }
+        finally
+        {
+            con.Close();
+        }
+        return list;
+    }
+
+    public static Product GetProduct(int id)
+    {
+        List<Product> list = GetAllProducts();
+        foreach (Product p in list)
+        {
+            if (p.Id == id)
+                return p;
+        }
+        return null;
+    }
+
+    public static bool insert(int id, string name, string category, double unit, string exp)
+    {
+        //connect to db
+        MySqlConnection con = new MySqlConnection();
+        con.ConnectionString = conpath;
+        //fire query
+        bool ans = false;
+        try
+        {
+            con.Open();
+            string query =
+                "insert into products(id,title,category,unitprice,expdate) values('"
+                + id
+                + "','"
+                + name
+                + "','"
+                + category
+                + "','"
+                + unit
+                + "','"
+                + exp
+                + "')";
+            MySqlCommand cmd = new MySqlCommand(query, con);
+            cmd.ExecuteNonQuery();
+            ans = true;
+        }
+        catch (Exception e)
+        {
+            Console.WriteLine(e.Message);
+        }
+        finally
+        {
+            con.Close();
+        }
+        return ans;
+    }
+
+    public static void Delete(int id)
+    {
+        MySqlConnection con = new MySqlConnection();
+        con.ConnectionString = conpath;
+        try
+        {
+            con.Open();
+            string query = "delete from products where id=" + id;
+            MySqlCommand cmd = new MySqlCommand(query, con);
+            cmd.ExecuteNonQuery();
+        }
+        catch (Exception e)
+        {
+            Console.WriteLine(e.Message);
+        }
+        finally
+        {
+            con.Close();
+        }
+    }
+
+    public static void Update(int id, string name, string category, double unit, string exp)
+    {
+        MySqlConnection con = new MySqlConnection();
+        con.ConnectionString = conpath;
+        try
+        {
+            con.Open();
+            string query =
+                "update products set title='"
+                + name
+                + "',category='"
+                + category
+                + "',unitprice='"
+                + unit
+                + "',expdate='"
+                + exp
+                + "' where Id="
+                + id;
+            MySqlCommand cmd = new MySqlCommand(query, con);
+            cmd.ExecuteNonQuery();
+        }
+        catch (Exception e)
+        {
+            Console.WriteLine(e.Message);
+        }
+        finally
+        {
+            con.Close();
+        }
+    }
+}
+-------------------------------------------------------------------------------------------------
+webapp-->controllers-->HomeController.cs(autogenerated)
+webapp-->controllers-->AuthController.cs
+using System.Diagnostics;
+using Microsoft.AspNetCore.Mvc;
+using dairyexpress.Models;
+using BLL;  
+
+namespace dairyexpress.Controllers;
+
+public class AuthController : Controller
+{
+    private readonly ILogger<AuthController> _logger;
+
+    public AuthController(ILogger<AuthController> logger)
+    {
+        _logger = logger;
+    }
+
+    public IActionResult Login()
+    {
+        return View();
+    }
+
+    public IActionResult Postlogin(string email, string password)
+    {
+        Manager mgr = new Manager();
+        if (mgr.validateBL(email, password))
+            return Redirect("/Home/Welcome");
+        return RedirectToAction("Register");
+    }
+
+    public IActionResult Register()
+    {
+        return View();
+    }
+
+    public IActionResult PostRegister(string name, string email, string password, int mobile)
+    {
+        Manager mgr = new Manager();
+        if (mgr.RegisterBL(name, email, password, mobile))
+            return Redirect("/Auth/Login");
+        return RedirectToAction("Register");
+    }
+}
+------------------------------------------------------------------------------------------------
+webapp-->controllers-->ProductControllers
+using System.Diagnostics;
+using Microsoft.AspNetCore.Mvc;
+using dairyexpress.Models;
+using BLL;
+using BOL;
+
+namespace dairyexpress.Controllers;
+
+public class ProductController : Controller
+{
+    private readonly ILogger<ProductController> _logger;
+
+    public ProductController(ILogger<ProductController> logger)
+    {
+        _logger = logger;
+    }
+
+    public IActionResult Catalog()
+    {
+        ProductMGRBLL mgr = new ProductMGRBLL();
+        List<Product> list = mgr.GetAllProducts();
+        ViewData["products"] = list;
+        return View();
+    }
+
+    public IActionResult Detail(int id)
+    {
+        ProductMGRBLL mgr = new ProductMGRBLL();
+        Product product = mgr.GetProduct(id);
+        this.ViewData["product"] = product;
+        return View();
+    }
+
+    public IActionResult Insert()
+    {
+        return View();
+    }
+
+    [HttpPost]
+    public IActionResult Insert(int id, string name, string category, double unit, string exp)
+    {
+        ProductMGRBLL mgr = new ProductMGRBLL();
+        bool ans = mgr.insert(id, name, category, unit, exp);
+        if (ans)
+            return RedirectToAction("Catalog");
+        return Redirect("/Home/Welcome");
+    }
+
+    public IActionResult Update(int id)
+    {
+        return View();
+    }
+
+    [HttpPost]
+    public IActionResult Update(int id, string name, string category, double unit, string exp)
+    {
+        ProductMGRBLL mgr = new ProductMGRBLL();
+        mgr.Update(id, name, category, unit, exp);
+        return RedirectToAction("Catalog");
+    }
+
+    public IActionResult Delete(int id)
+    {
+        ProductMGRBLL mgr = new ProductMGRBLL();
+        mgr.Delete(id);
+        return RedirectToAction("Catalog");
+    }
+}
+---------------------------------------------------------------------------------------------------
+views-->home-->welcome.cshtml
+@{
+    ViewData["Title"] = "Welcome";
+}
+
+<div style="text-align: center;">
+    <h1>Welcome to Dairy Express</h1> <br>
+    <img src="\images\dairy-products.jpg" width="600px">
+</div>
+--------------------------------------------------------------------------------------------------
+views-->home-->index.cshtml
+
+@{
+    ViewData["Title"] = "Home Page";
+}
+
+<div class="text-center">
+    <h1 class="display-4"></h1>
+    <h3 class="display-7" style="text-align: justify;">
+        DairyExpress Platform can be the greatest blessing for the
+        customer’s everyday morning needs
+        of dairy products. With this platform customer can register and order their daily requirements of dairy products
+        and receives assured delivery at the desire time every day at their doorstep.</h3>
+</div>
+----------------------------------------------------------------------------------------------------
+views-->auth-->index.cshtml
+@{
+    ViewData["Title"] = "Login";
+}
+
+<div class="text-center">
+    <h5 class="display-6">Login</h5>
+    <form action="postlogin">
+        <label for="email">Email : </label>
+        <input type="email" name="email" id="email" placeholder="Enter Your Email">
+        <br> <br>
+        <label for="password">Password : </label>
+        <input type="password" name="password" id="password" placeholder="Enter Your Password">
+        <br> <br>
+        <input type="submit">
+    </form>
+</div>
+---------------------------------------------------------------------------------------------------
+views-->auth-->register.cshtml
+@{
+    ViewData["Title"] = "Register";
+}
+
+<div class="text-center">
+    <h5 class="display-6">Register</h5>
+    <form action="postRegister">
+        <label for="name">Name : </label>
+        <input type="text" name="name" id="name" placeholder="Enter Your Name">
+        <br> <br>
+        <label for="email">Email : </label>
+        <input type="email" name="email" id="email" placeholder="Enter Your Email">
+        <br> <br>
+        <label for="password">Password : </label>
+        <input type="password" name="password" id="password" placeholder="Enter Your Password">
+        <br> <br>
+        <label for="mobile">Mobile : </label>
+        <input type="number" name="mobile" id="mobile" placeholder="Enter Your Mobile">
+        <br> <br>
+        <input type="submit">
+    </form>
+</div>
+-----------------------------------------------------------------------------------------------
+views-->product-->catalog.cshtml
+@using BOL;
+@{
+    ViewData["Title"] = "Catalog Page";
+}
+<div>
+    @{
+        <button><a href="/Product/Insert">Insert</a></button>
+        List<Product> products = (List<Product>)ViewData["products"];
+        <ol>
+            @foreach (Product product in products)
+            {
+                <li>
+                    <a href="/Product/detail/@product.Id" style="font-size:large;">@product.Name</a> &nbsp; &nbsp;
+                    <button style="background-color: cyan;"><a href="/Product/Update/@product.Id">Update</a></button>&nbsp; &nbsp; 
+                    <button style="background-color: skyblue;"><a href="/Product/Delete/@product.Id">Delete</a></button>
+                    <br> <br>
+                </li>
+            }
+        </ol>
+    }
+</div>
+-----------------------------------------------------------------------------------------------
+views-->product-->detail.cshtml
+@using BOL;
+@{
+    ViewData["Title"] = "Detail Page";
+}
+<div> @{
+        Product product = ViewData["product"] as Product;
+        <p>ID : @product.Id</p>
+        <p>Name : @product.Name</p>
+        <p>Category : @product.Category</p>
+        <p>UnitPrice : @product.UnitPrice</p>
+        <p>Exp Date : @product.ExpDate</p>
+    }
+</div>
+-----------------------------------------------------------------------------------------------
+views-->product-->insert.cshtml
+@using BOL;
+@{
+    ViewData["Title"] = "Insert Page";
+}
+<div>
+    <h1>Form</h1>
+    <form method="post" action="insert">
+        <label for="id">ID :</label>
+        <input type="number" name="id" id="id" placeholder="ID " />
+        <br><br>
+        <label for="name">Name :</label>
+        <input type="text" name="name" id="name" placeholder="Name" />
+        <br><br>
+        <label for="category">Category : </label>
+        <input type="text" name="category" id="category" placeholder="category" />
+        <br><br>
+        <label for="unit">Unit Price : </label>
+        <input type="number" name="unit" id="unit" placeholder="Unit Price" />
+        <br><br>
+        <label for="exp">Exp Date : </label>
+        <input type="date" name="exp" id="exp" placeholder="Exp date ">
+        <br>    
+        <input type="submit">
+    </form>
+</div>
+-----------------------------------------------------------------------------------------------
+views-->product-->update.cshtml
+@using BOL;
+@{
+    ViewData["Title"] = "Update Page";
+}
+<div>
+    <form method="post" action="update">
+        <label for="id">Enter ID Name :</label>
+        <input type="number" name="id" id="id" placeholder="Enter id" />
+        <br><br>
+        <label for="name">Enter New Name :</label>
+        <input type="text" name="name" id="name" placeholder="Enter Name" />
+        <br><br>
+        <label for="category">Enter New Category : </label>
+        <input type="text" name="category" id="category" placeholder="Enter category" />
+        <br><br>
+        <label for="unit">Enter New Unit Price : </label>
+        <input type="number" name="unit" id="unit" placeholder="Enter New Unit Price" />
+        <br><br>
+        <label for="exp">Enter New Exp Date : </label>
+        <input type="date" name="exp" id="exp" placeholder="Enter New Exp date ">
+        <br>
+        <input type="submit">
+    </form>
+</div>
+----------------------------------------------------------------------------------------------
+webapp -->program.cs
+var builder = WebApplication.CreateBuilder(args);
+
+// Add services to the container.
+builder.Services.AddControllersWithViews();
+
+var app = builder.Build();
+
+// Configure the HTTP request pipeline.
+if (!app.Environment.IsDevelopment())
+{
+    app.UseExceptionHandler("/Home/Error");
+    // The default HSTS value is 30 days. You may want to change this for production scenarios, see https://aka.ms/aspnetcore-hsts.
+    app.UseHsts();
+}
+
+app.UseHttpsRedirection();
+app.UseStaticFiles();
+
+app.UseRouting();
+
+app.UseAuthorization();
+
+app.MapControllerRoute(
+    name: "default",
+    pattern: "{controller=Home}/{action=Index}/{id?}");
+
+app.Run();
+-------------------------------------------------------------------------------------------------
+bll reference in webapp
+dal reference in bll
+bol reference in dal
+-----------------------------------------------------------------------------------------------
